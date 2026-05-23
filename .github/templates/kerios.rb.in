@@ -1,0 +1,51 @@
+class Kerios < Formula
+  desc "Sync AI assistant configs (Claude Code, Codex, ...) from a git repo"
+  homepage "https://github.com/artemislab/kerios"
+  version "__VERSION__"
+  license "GPL-3.0-or-later"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/artemislab/kerios/releases/download/v__VERSION__/kerios-v__VERSION__-aarch64-apple-darwin.tar.gz"
+      sha256 "__SHA_MACOS_ARM64__"
+    else
+      url "https://github.com/artemislab/kerios/releases/download/v__VERSION__/kerios-v__VERSION__-x86_64-apple-darwin.tar.gz"
+      sha256 "__SHA_MACOS_X86_64__"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "https://github.com/artemislab/kerios/releases/download/v__VERSION__/kerios-v__VERSION__-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "__SHA_LINUX_ARM64__"
+    else
+      url "https://github.com/artemislab/kerios/releases/download/v__VERSION__/kerios-v__VERSION__-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "__SHA_LINUX_X86_64__"
+    end
+  end
+
+  def install
+    bin.install "kerios"
+  end
+
+  def caveats
+    <<~EOS
+      To run the sync daemon as a launchd / systemd service:
+          kerios install > ~/Library/LaunchAgents/io.artemislab.kerios.plist   # macOS
+          kerios install > ~/.config/systemd/user/kerios.service                # Linux
+
+      Then load it:
+          launchctl load ~/Library/LaunchAgents/io.artemislab.kerios.plist     # macOS
+          systemctl --user enable --now kerios                                  # Linux
+
+      First-time configuration:
+          kerios enroll <bootstrap-url> --team <name> --user <name>
+
+      See: https://github.com/artemislab/kerios#configure
+    EOS
+  end
+
+  test do
+    assert_match "kerios", shell_output("#{bin}/kerios --version")
+  end
+end

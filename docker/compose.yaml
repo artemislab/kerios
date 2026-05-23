@@ -1,0 +1,80 @@
+# Demo: one git-daemon serving a bare repo + three agents with different
+# identities. Run from the project root:
+#
+#   docker compose -f docker/compose.yaml up --build
+#
+# Then in another shell:
+#
+#   docker/demo.sh
+#
+# to drive the propagation + drift scenarios.
+
+name: kerios-demo
+
+services:
+  gitserver:
+    build:
+      context: ./gitserver
+    container_name: kerios-demo-git
+    # `git daemon` exposes /srv/*.git over the git:// protocol on 9418.
+    volumes:
+      - ./gitserver/repos:/srv:rw
+    networks:
+      - kerios
+
+  agent-alice:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: kerios-demo-alice
+    depends_on: [gitserver]
+    environment:
+      RUST_LOG: info
+    volumes:
+      - ./agents/alice/config.toml:/root/.kerios/config.toml:ro
+      - alice-claude:/root/.claude
+      - alice-codex:/root/.codex
+    networks:
+      - kerios
+
+  agent-bob:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: kerios-demo-bob
+    depends_on: [gitserver]
+    environment:
+      RUST_LOG: info
+    volumes:
+      - ./agents/bob/config.toml:/root/.kerios/config.toml:ro
+      - bob-claude:/root/.claude
+      - bob-codex:/root/.codex
+    networks:
+      - kerios
+
+  agent-charlie:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: kerios-demo-charlie
+    depends_on: [gitserver]
+    environment:
+      RUST_LOG: info
+    volumes:
+      - ./agents/charlie/config.toml:/root/.kerios/config.toml:ro
+      - charlie-claude:/root/.claude
+      - charlie-codex:/root/.codex
+    networks:
+      - kerios
+
+networks:
+  kerios:
+    driver: bridge
+
+volumes:
+  alice-claude:
+  alice-codex:
+  bob-claude:
+  bob-codex:
+  charlie-claude:
+  charlie-codex:

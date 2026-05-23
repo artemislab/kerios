@@ -1,0 +1,26 @@
+# Rust
+/target
+**/*.rs.bk
+
+# Worktrees (agent teams isolation)
+/.worktrees
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local config
+.env
+.env.local
+
+# Claude Code generated state (not the tooling templates themselves)
+.claude/.session-snapshot.md
+.claude/audit.jsonl
+.claude/ralph-prd.json
+.claude/.docs-meta.json
+.claude/settings.local.json
+
+# BMAD business outputs (internal planning, never public)
+/.claude/output/

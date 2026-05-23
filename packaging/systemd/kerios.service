@@ -1,0 +1,14 @@
+[Unit]
+Description=Kerios — AI assistant config sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={BINARY} daemon
+Restart=on-failure
+RestartSec=5
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=default.target
