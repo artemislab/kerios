@@ -1,0 +1,62 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CONTEXT_COMPACT_THRESHOLD": "75",
+    "EVAL_HOLDOUT_RATIO": "0.4",
+    "EVAL_NUM_WORKERS": "10",
+    "EVAL_RUNS_PER_QUERY": "3",
+    "EVAL_TIMEOUT": "30",
+    "EVAL_TRIGGER_THRESHOLD": "0.5"
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "command": "SF=.claude/.session-snapshot.md; echo '# Session Snapshot' \u003e $SF; echo \"Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)\" \u003e\u003e $SF; echo \"Branch: $(git branch --show-current 2\u003e/dev/null || echo 'unknown')\" \u003e\u003e $SF; echo '' \u003e\u003e $SF; echo '## Modified Files' \u003e\u003e $SF; git diff --name-only HEAD 2\u003e/dev/null \u003e\u003e $SF; echo '' \u003e\u003e $SF; echo '## Staged Files' \u003e\u003e $SF; git diff --cached --name-only 2\u003e/dev/null \u003e\u003e $SF; echo '' \u003e\u003e $SF; echo '## Recent Commits (this branch)' \u003e\u003e $SF; git log --oneline -5 2\u003e/dev/null \u003e\u003e $SF; echo '' \u003e\u003e $SF; if [ -f .claude/ralph-prd.json ]; then echo '## Ralph Progress' \u003e\u003e $SF; grep -c '\"passes\": true' .claude/ralph-prd.json 2\u003e/dev/null | xargs -I{} echo \"Stories passed: {}\" \u003e\u003e $SF; grep -c '\"passes\": false' .claude/ralph-prd.json 2\u003e/dev/null | xargs -I{} echo \"Stories remaining: {}\" \u003e\u003e $SF; echo '' \u003e\u003e $SF; fi; echo '## Active Tasks' \u003e\u003e $SF; echo 'Review the snapshot above to resume where you left off.' \u003e\u003e $SF; echo 'Session snapshot saved to .claude/.session-snapshot.md'",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '^git (commit|push)'; then echo '=== Staged files ===' \u0026\u0026 git diff --cached --name-only; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "echo '## Quality Enforcement Protocol\n\n### TDD (non-negotiable for code stories)\nRED: Write ONE failing test → GREEN: Minimum code to pass → REFACTOR: Clean up with tests green.\nNo production code without a failing test first. Code written before a test = delete and restart.\nExceptions: config, infra, migrations, static assets, markdown templates.\n\n### Double Review (po/all-roles modes)\nAfter teammate reports done: spec-reviewer (conformity) + code-quality-reviewer (quality) run in parallel as fresh subagents.\nBoth must PASS before acceptance-validator runs.\nSkipped in dev mode.\n\n### Plan Granularity\nStories \u003e 50 lines: decompose into 2-5 minute tasks with exact files, complete code, and verification commands.\nPriority: CLAUDE.md \u003e these guidelines \u003e defaults.'; echo ''; if [ -f .claude/.session-snapshot.md ]; then echo '## Session Resumed — Previous State'; cat .claude/.session-snapshot.md; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read(src/**)",
+      "Read(docs/**)",
+      "Read(tests/**)",
+      "Read(.claude/**)"
+    ],
+    "defaultMode": "auto",
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
+  "teammateMode": "auto"
+}

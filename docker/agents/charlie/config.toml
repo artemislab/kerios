@@ -1,0 +1,12 @@
+[source]
+type = "git"
+repo_url = "git://gitserver/configs.git"
+cache_dir = "/root/.kerios/cache"
+
+[sync]
+mode = "pull"
+interval_secs = 5
+
+[identity]
+team = "frontend"
+# charlie has no per-user layer

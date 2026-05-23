@@ -1,0 +1,31 @@
+[package]
+name = "kerios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Kerios: single dev-machine binary — daemon and admin CLI via subcommands"
+
+[[bin]]
+name = "kerios"
+path = "src/main.rs"
+
+[dependencies]
+kerios-core = { path = "../kerios-core" }
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+clap = { version = "4", features = ["derive"] }
+fd-lock = "4"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+fd-lock = "4"
+tempfile = "3"
+
+[lints]
+workspace = true

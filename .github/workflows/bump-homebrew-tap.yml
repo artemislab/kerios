@@ -1,0 +1,106 @@
+name: Bump Homebrew tap
+
+# Fires after the Release workflow publishes a GitHub Release (which it does
+# only at the end, once all 4 archives + .sha256 files are uploaded).
+# Re-renders Formula/kerios.rb in artemislab/homebrew-tap from the template,
+# commits, and pushes — no manual SHA juggling per release.
+#
+# One-time setup before this workflow does anything useful:
+#   1. Create a PAT (or fine-grained token) with `contents: write` on
+#      artemislab/homebrew-tap. The PAT can be from a bot account; it does
+#      NOT need access to this repo.
+#   2. Add it to artemislab/kerios secrets as HOMEBREW_TAP_TOKEN.
+# When the secret is missing the workflow fails fast in the checkout step
+# with a clear error.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    name: Update Formula/kerios.rb
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo (for the template)
+        uses: actions/checkout@v4
+
+      - name: Resolve tag and version
+        id: vars
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          echo "tag=$tag"          >> "$GITHUB_OUTPUT"
+          echo "version=$version"  >> "$GITHUB_OUTPUT"
+
+      - name: Download release SHA-256 files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.vars.outputs.tag }}"
+          mkdir -p shas
+          for target in \
+              aarch64-apple-darwin \
+              x86_64-apple-darwin \
+              aarch64-unknown-linux-gnu \
+              x86_64-unknown-linux-gnu
+          do
+              gh release download "$tag" \
+                  --repo "${{ github.repository }}" \
+                  --pattern "kerios-$tag-$target.tar.gz.sha256" \
+                  --dir shas
+          done
+
+      - name: Render Formula from template
+        id: render
+        run: |
+          set -euo pipefail
+          tag="${{ steps.vars.outputs.tag }}"
+          version="${{ steps.vars.outputs.version }}"
+
+          sha_of() {
+              awk '{print $1}' "shas/kerios-$tag-$1.tar.gz.sha256"
+          }
+          SHA_MACOS_ARM64=$(sha_of aarch64-apple-darwin)
+          SHA_MACOS_X86_64=$(sha_of x86_64-apple-darwin)
+          SHA_LINUX_ARM64=$(sha_of aarch64-unknown-linux-gnu)
+          SHA_LINUX_X86_64=$(sha_of x86_64-unknown-linux-gnu)
+
+          mkdir -p rendered/Formula
+          sed \
+              -e "s|__VERSION__|$version|g" \
+              -e "s|__SHA_MACOS_ARM64__|$SHA_MACOS_ARM64|g" \
+              -e "s|__SHA_MACOS_X86_64__|$SHA_MACOS_X86_64|g" \
+              -e "s|__SHA_LINUX_ARM64__|$SHA_LINUX_ARM64|g" \
+              -e "s|__SHA_LINUX_X86_64__|$SHA_LINUX_X86_64|g" \
+              .github/templates/kerios.rb.in \
+              > rendered/Formula/kerios.rb
+
+          echo "rendered Formula (first 12 lines):"
+          head -12 rendered/Formula/kerios.rb
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: artemislab/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Commit + push if changed
+        run: |
+          set -euo pipefail
+          cp rendered/Formula/kerios.rb tap/Formula/kerios.rb
+          cd tap
+          git config user.name  "kerios-bot"
+          git config user.email "kerios-bot@artemislab.io"
+          if git diff --quiet -- Formula/kerios.rb; then
+              echo "Formula already at ${{ steps.vars.outputs.tag }}, nothing to push."
+              exit 0
+          fi
+          git add Formula/kerios.rb
+          git commit -m "chore: bump kerios to ${{ steps.vars.outputs.tag }}"
+          git push
