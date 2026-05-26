@@ -24,3 +24,6 @@
 
 # BMAD business outputs (internal planning, never public)
 /.claude/output/
+
+# Launch / marketing drafts (internal, never public)
+LAUNCH.md

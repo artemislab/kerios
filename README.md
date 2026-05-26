@@ -1,8 +1,8 @@
 # Kerios
 
-**Agent governance for AI coding assistants across your team.**
+Every developer on your team has slightly different AI assistant configs — and nobody knows whose is authoritative. Kerios fixes that.
 
-Kerios is a lightweight Rust daemon that keeps Claude Code and Codex configs in sync across an engineering team — like Puppet, but for AI tools.
+Kerios is a small Rust daemon that keeps Claude Code, Codex, Copilot, and Cursor configs in sync across your entire team from a single git repo — org-wide defaults, team overrides, and per-user exceptions, merged automatically on each machine.
 
 - One git repo holds the org-wide, per-team, and per-user config layers.
 - A small daemon on each developer machine pulls + merges them, then writes the result to `~/.claude/`, `~/.codex/`, etc.
@@ -10,6 +10,41 @@ Kerios is a lightweight Rust daemon that keeps Claude Code and Codex configs in 
 - Zero telemetry, zero call-home. The only outbound network traffic is the git pull.
 
 For diagrams and the longer "what / why", read [`docs/architecture.md`](docs/architecture.md). To see the daemon in action against a tiny git server + three agents on your laptop in two minutes, see [`docker/`](docker/).
+
+---
+
+## Why this exists
+
+The teams we talked to had the same failure modes. You'll recognize them.
+
+- **New hire onboarding**: someone joins, copies a colleague's `~/.claude/` over Slack, and that snapshot is what they use forever — stale the moment it's shared.
+- **Policy drift**: security posts an updated `CLAUDE.md` with a new tool restriction. Three weeks later, half the team is still running the old one because there's no push mechanism.
+- **Behavioral inconsistency**: two engineers on the same feature have subtly different agent instructions. The AI behaves differently for each. Nobody notices until a review.
+- **Off-boarding gap**: someone leaves. Their local config — the prompt tuning they spent months on — leaves with them. There's no central record.
+- **No audit trail**: you can't answer "what config was Alice running when that incident happened?"
+
+If any of these have happened on your team, Kerios is for you.
+
+---
+
+## Why not Puppet / Chef / Ansible?
+
+Those tools exist and are good. They're also wrong for this problem.
+
+| | Kerios | Puppet / Chef / Ansible |
+|---|---|---|
+| **Scope** | Purpose-built for AI assistant config files (`~/.claude/`, `~/.codex/`, etc.) with provider detection and layer merging | General-purpose; no concept of AI config structure or user-level home directory management |
+| **Daemon weight** | Single static binary, ~5 MB, user-level service, no agent certificates, no server required (OSS) | Requires an agent (Puppet), controller node (Ansible), or Chef server; operational overhead before day one |
+| **Install ceremony** | `brew install kerios && kerios enroll <url>` — two commands for a new machine | Bootstrap scripts, package repos, server enrollment, certificate authority setup |
+| **Secrets model** | Deploy key fetched once at enroll time, stored at `~/.kerios/` (0600). Never in the config repo. | Depends on tool: Hiera, Vault integration, or custom; significant setup to avoid secrets in the manifest repo |
+
+Kerios does one thing. If you already run Puppet for the rest of your fleet, Kerios sits alongside it for the AI layer.
+
+---
+
+## Need centralized control, audit logs, and SOC 2 evidence?
+
+**kerios-enterprise** adds a brain server with mTLS, an admin web UI, per-user sync history, a tamper-evident audit log, and one-command evidence packs for compliance audits (CC6.1 / CC6.6 / CC6.7 / CC7.1 / CC7.2). Closed-source paid tier — contact **enterprise@artemislab.io**.
 
 ## Status
 
