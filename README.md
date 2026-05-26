@@ -76,6 +76,10 @@ Drops the binary in `~/.local/bin/kerios` (or `/usr/local/bin/kerios` as root). 
 cargo install --git https://github.com/artemislab/kerios kerios   # Rust 1.85+
 ```
 
+### Windows
+
+Kerios doesn't ship a native Windows binary today. Use [WSL2](https://learn.microsoft.com/windows/wsl/install) — install Ubuntu (`wsl --install -d Ubuntu`), then run any of the install paths above inside WSL. The daemon writes to your WSL home; if you also want it touching `C:\Users\<you>\.claude\` on the Windows side, drop a Windows-side symlink into the WSL filesystem. Native Windows (`cargo` target + MSI + Windows service) is on the v0.4 roadmap — open an issue if you need it sooner.
+
 ---
 
 ## Quick start
