@@ -9,18 +9,22 @@ authors.workspace = true
 description = "Core library for Kerios: config merge, policy engine, provider adapters"
 
 [dependencies]
+base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+ed25519-dalek = { version = "2", default-features = false, features = ["pkcs8", "pem", "rand_core"] }
 jsonwebtoken = { version = "9", default-features = false, features = ["use_pem"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 thiserror = "1"
+time = { version = "0.3", features = ["serde-well-known", "parsing", "formatting"] }
 toml = "0.8"
 ureq = { version = "2", default-features = false, features = ["json", "tls"] }
 walkdir = "2"
 
 [dev-dependencies]
 proptest = "1"
+rand = "0.8"
 tempfile = "3"
 
 [lints]

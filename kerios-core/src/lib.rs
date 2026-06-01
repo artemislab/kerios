@@ -7,6 +7,7 @@ pub mod auth;
 pub mod bootstrap;
 pub mod config;
 pub mod github_app;
+pub mod licence;
 pub mod merge;
 pub mod providers;
 pub mod secrets;
